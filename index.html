@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>DL EA2 – Regression mit FFNN</title>
+
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css" />
+  
+
+  <!-- TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+
+  <!-- Plotly für Diagramme -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Deep Learning - EA 2: Regression mit FFNN</h1>
+    <p>
+      Regression einer reellwertigen Funktion mit TensorFlow.js.
+    </p>
+  </header>
+  <main>
+  <section class="card status-card">
+  <h2>Status</h2>
+  <p id="status">Anwendung wird geladen ...</p>
+
+  <div id="result-summary" class="result-summary hidden">
+    <h3>Finale Loss-Werte</h3>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Modell</th>
+          <th>Training MSE</th>
+          <th>Test MSE</th>
+          <th>Interpretation</th>
+        </tr>
+      </thead>
+      <tbody id="summary-table-body">
+      </tbody>
+    </table>
+  </div>
+
+  <p class="hint-text">
+    Die Daten werden beim Laden der Seite erzeugt, die Modelle werden im Browser trainiert
+    und die Resultate werden anschließend dynamisch als Diagramme dargestellt.
+  </p>
+</section>
+
+  <section class="card">
+    <h2>R1: Datensätze</h2>
+    <p>
+      Links ist der unverrauschte Datensatz dargestellt, rechts der verrauschte Datensatz.
+      Trainings- und Testdaten sind farblich unterschieden.
+    </p>
+
+    <div class="plot-grid">
+      <div>
+        <h3>Ohne Rauschen</h3>
+        <div id="plot-clean" class="plot"></div>
+      </div>
+
+      <div>
+        <h3>Mit Rauschen</h3>
+        <div id="plot-noisy" class="plot"></div>
+      </div>
+    </div>
+  </section>
+  <section class="card">
+  <h2>R2: Modell trainiert ohne Rauschen</h2>
+  <p>
+    Das erste Feed-Forward Neural Network wird auf den unverrauschten Trainingsdaten trainiert.
+    Anschließend wird die Vorhersage getrennt auf Trainingsdaten und Testdaten dargestellt.
+  </p>
+
+  <div class="plot-grid">
+    <div>
+      <h3>Training ohne Rauschen</h3>
+      <div id="plot-clean-train-prediction" class="plot"></div>
+      <p id="loss-clean-train" class="loss-text">Loss Training: wird berechnet ...</p>
+    </div>
+
+    <div>
+      <h3>Test ohne Rauschen</h3>
+      <div id="plot-clean-test-prediction" class="plot"></div>
+      <p id="loss-clean-test" class="loss-text">Loss Test: wird berechnet ...</p>
+    </div>
+  </div>
+</section>
+<section class="card">
+  <h2>R3: Best-Fit-Modell trainiert mit Rauschen</h2>
+  <p>
+    Dieses Modell wird auf den verrauschten Trainingsdaten trainiert, aber nicht zu lange.
+    Ziel ist eine möglichst gute Generalisierung auf unbekannte Testdaten.
+  </p>
+
+  <div class="plot-grid">
+    <div>
+      <h3>Training mit Rauschen – Best-Fit</h3>
+      <div id="plot-best-train-prediction" class="plot"></div>
+      <p id="loss-best-train" class="loss-text">Loss Training: wird berechnet ...</p>
+    </div>
+
+    <div>
+      <h3>Test mit Rauschen – Best-Fit</h3>
+      <div id="plot-best-test-prediction" class="plot"></div>
+      <p id="loss-best-test" class="loss-text">Loss Test: wird berechnet ...</p>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>R4: Overfit-Modell trainiert mit Rauschen</h2>
+  <p>
+    Dieses Modell wird deutlich länger auf den verrauschten Trainingsdaten trainiert.
+    Dadurch kann es anfangen, das Rauschen der Trainingsdaten mitzuler­nen.
+  </p>
+
+  <div class="plot-grid">
+    <div>
+      <h3>Training mit Rauschen – Overfit</h3>
+      <div id="plot-overfit-train-prediction" class="plot"></div>
+      <p id="loss-overfit-train" class="loss-text">Loss Training: wird berechnet ...</p>
+    </div>
+
+    <div>
+      <h3>Test mit Rauschen – Overfit</h3>
+      <div id="plot-overfit-test-prediction" class="plot"></div>
+      <p id="loss-overfit-test" class="loss-text">Loss Test: wird berechnet ...</p>
+    </div>
+  </div>
+</section>
+<section class="card">
+  <h2>R5: Loss und Trainingsverlauf</h2>
+  <p>
+    Die folgenden Diagramme zeigen den Trainingsverlauf der Modelle sowie den finalen Vergleich
+    zwischen Trainings-Loss und Test-Loss.
+  </p>
+
+  <div class="plot-grid">
+    <div>
+      <h3>Trainings-Loss über die Epochen</h3>
+      <div id="plot-training-loss" class="plot"></div>
+    </div>
+
+    <div>
+      <h3>Finaler MSE-Vergleich</h3>
+      <div id="plot-final-loss" class="plot"></div>
+    </div>
+  </div>
+</section>
+<section class="card">
+  <h2>Diskussion</h2>
+
+  <p>
+    Das unverrauschte Modell konnte die zugrunde liegende Funktion sehr gut approximieren,
+    da die Trainingsdaten exakt auf der Ground-Truth-Funktion liegen.
+    Der Trainings-Loss ist sehr klein und auch der Test-Loss bleibt niedrig, weil kein künstliches
+    Label-Rauschen vorhanden ist.
+    Beim verrauschten Datensatz ist die Aufgabe schwieriger, da die y-Werte nicht mehr exakt
+    auf der ursprünglichen Funktion liegen.
+    Das Best-Fit-Modell folgt dem allgemeinen Verlauf der Funktion, lernt aber nicht jeden einzelnen
+    verrauschten Datenpunkt auswendig.
+    Dadurch generalisiert es besser auf unbekannte Testdaten.
+    Das Overfit-Modell wurde länger trainiert und erreicht einen kleineren Trainings-Loss als das
+    Best-Fit-Modell.
+    Gleichzeitig bleibt der Test-Loss deutlich höher, was auf Overfitting hindeutet.
+    Das Modell beginnt also, auch zufällige Abweichungen der Trainingsdaten mitzuler­nen.
+    Insgesamt zeigt das Experiment, dass ein niedriger Trainings-Loss allein nicht ausreicht,
+    um die Qualität eines Modells zu beurteilen.
+  </p>
+</section>
+
+<section class="card">
+  <h2>Dokumentation</h2>
+
+  <h3>Technische Dokumentation</h3>
+  <p>
+    Für die Implementierung wurde <strong>TensorFlow.js</strong> verwendet, um die neuronalen
+    Netze direkt im Browser zu erstellen, zu trainieren und für Vorhersagen zu nutzen.
+    Für die Visualisierung wurde <strong>Plotly.js</strong> eingesetzt, da damit Datenpunkte,
+    Modellvorhersagen, Ground-Truth-Kurven und Loss-Verläufe übersichtlich dargestellt werden können.
+    Die Anwendung läuft vollständig clientseitig im Browser und benötigt keinen separaten Server
+    für das Training oder die Berechnung der Ergebnisse.
+  </p>
+
+  <h3>Fachliche Dokumentation</h3>
+  <p>
+    Es wurden 100 gleichverteilte x-Werte im Intervall [-2, +2] erzeugt und mit der vorgegebenen
+    Funktion in y-Werte umgerechnet.
+    Anschließend wurde der Datensatz zufällig in 50 Trainingsdaten und 50 Testdaten aufgeteilt.
+    Für den verrauschten Datensatz wurde normalverteiltes Gaussian Noise mit Varianz 0.05 nur auf
+    die y-Werte addiert, während die x-Werte unverändert blieben.
+    Als Modell wurde ein Feed-Forward Neural Network mit zwei Hidden Layern zu je 100 Neuronen,
+    ReLU-Aktivierungen und einem linearen Output-Neuron verwendet.
+    Trainiert wurde mit Mean Squared Error als Loss-Funktion und Adam als Optimizer mit einer
+    Learning Rate von 0.01 sowie einer Batch Size von 32.
+    Es wurden drei Modelle trainiert: ein Modell ohne Rauschen, ein Best-Fit-Modell auf verrauschten
+    Daten und ein länger trainiertes Overfit-Modell.
+    Die Testdaten wurden nicht für das Training verwendet, sondern nur zur abschließenden Bewertung
+    und Visualisierung.
+  </p>
+
+  <h3>Verwendete Parameter</h3>
+  <table class="parameter-table">
+    <tr>
+      <th>Parameter</th>
+      <th>Wert</th>
+    </tr>
+    <tr>
+      <td>Anzahl Datenpunkte</td>
+      <td>100</td>
+    </tr>
+    <tr>
+      <td>Trainingsdaten / Testdaten</td>
+      <td>50 / 50</td>
+    </tr>
+    <tr>
+      <td>Intervall</td>
+      <td>[-2, +2]</td>
+    </tr>
+    <tr>
+      <td>Rauschen</td>
+      <td>Gaussian Noise auf y mit Varianz 0.05</td>
+    </tr>
+    <tr>
+      <td>Architektur</td>
+      <td>2 Hidden Layer mit je 100 Neuronen</td>
+    </tr>
+    <tr>
+      <td>Aktivierungsfunktion</td>
+      <td>ReLU in Hidden Layern, linear im Output</td>
+    </tr>
+    <tr>
+      <td>Loss</td>
+      <td>Mean Squared Error</td>
+    </tr>
+    <tr>
+      <td>Optimizer</td>
+      <td>Adam, Learning Rate 0.01</td>
+    </tr>
+    <tr>
+      <td>Batch Size</td>
+      <td>32</td>
+    </tr>
+  </table>
+  <h3>Quellen und verwendete Grundlagen</h3>
+<ul class="source-list">
+  <li>
+    TensorFlow.js wurde als Framework für das Erstellen, Trainieren und Ausführen der neuronalen Netze im Browser verwendet:
+    <a href="https://www.tensorflow.org/js" target="_blank" rel="noopener noreferrer">
+      https://www.tensorflow.org/js
+    </a>
+  </li>
+  <li>
+    Das TensorFlow.js Tutorial „Making predictions from 2d data” diente als technische Orientierung für Regression mit TensorFlow.js:
+    <a href="https://www.tensorflow.org/js/tutorials/training/linear_regression" target="_blank" rel="noopener noreferrer">
+      https://www.tensorflow.org/js/tutorials/training/linear_regression
+    </a>
+  </li>
+  <li>
+    Plotly.js wurde für die Darstellung der Datenpunkte, Modellvorhersagen, Ground-Truth-Kurve und Loss-Diagramme eingesetzt:
+    <a href="https://plotly.com/javascript/" target="_blank" rel="noopener noreferrer">
+      https://plotly.com/javascript/
+    </a>
+  </li>
+  <li>
+    Die Ziel-Funktion, Datenerzeugung, Netzwerkarchitektur und die Parameter orientieren sich an der Aufgabenstellung der EA2.
+  </li>
+</ul>
+</section>
+</main>
+  <script src="script.js"></script>
+</body>
+</html>
